@@ -1,0 +1,13 @@
+{
+  "RatePopUp": {
+    "levelNumbers": [
+      3,
+	  25,
+	  35
+    ],
+    "message": "Love Good Chef - Cooking Games\nPlease Rate us!",
+    "Coins": 0,
+	"isNotNowButton": true,
+	"isEnabled": true
+  }
+}
