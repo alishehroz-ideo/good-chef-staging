@@ -144,9 +144,6 @@
       var canvas   = document.querySelector("#unity-canvas");
       var isTouch  = window.matchMedia("(pointer: coarse)").matches;
 
-      // Cap the render buffer. Phones report DPR 2-3; at DPR 3 this game renders ~9x
-      // the pixels for no visible gain on a small screen and tanks the framerate.
-      var DPR = isTouch ? 1 : Math.min(window.devicePixelRatio || 1, 2);
 
       function setProgress(p) {
         var pct = Math.round(p * 100);
@@ -201,8 +198,7 @@
         productName: "Good Chef - Cooking Games",
         productVersion: "1.9",
         showBanner: unityShowBanner,
-        matchWebGLToCanvasSize: true,
-        devicePixelRatio: DPR
+        matchWebGLToCanvasSize: true
       };
 
       var script = document.createElement("script");
