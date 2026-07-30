@@ -1,0 +1,9 @@
+{
+  "tenant": "local-test",
+  "assets": [
+    {
+      "key": "Burger_Restaurant_BG",
+      "url": "partner/Burger_Restaurant_BG.png"
+    }
+  ]
+}
