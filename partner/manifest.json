@@ -4,6 +4,10 @@
     {
       "key": "Burger_Restaurant_BG",
       "url": "partner/Burger_Restaurant_BG.png"
+    },
+    {
+      "key": "Chef",
+      "url": "partner/chef.png"
     }
   ]
 }
