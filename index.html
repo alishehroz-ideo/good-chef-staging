@@ -4,27 +4,33 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-    <!-- viewport-fit=cover fills the notch area; user-scalable=no kills pinch-zoom,
-         which otherwise fights the game's own touch handling. -->
+    <!-- viewport-fit=cover fills the notch area; user-scalable=no stops pinch-zoom fighting the
+         game's own touch handling. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0E1412">
+    <meta name="theme-color" content="#0e0e12">
 
     <title>Good Chef - Cooking Games</title>
-
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
     <style>
-      /* ===== Good Chef — mobile landscape template =====
-         Self-contained: no TemplateData/style.css dependency, because Unity
-         regenerates that file on every build and it would fight these rules. */
+      /* ===== Ideofuzion template — Good Chef (LANDSCAPE) =====
+         House template, with two deliberate departures from the portrait games:
+
+           1. The canvas FILLS the viewport instead of letterboxing. Good Chef has CameraFit, which
+              adapts the camera to any aspect - letterboxing to a fixed ratio would add black bars
+              on a 19.5:9 phone for no reason. The portrait titles need the letterbox; this one does not.
+           2. Mobile landscape handling: rotate gate, fullscreen + orientation lock, visualViewport
+              sizing. The portrait games do not need these.
+
+         Everything else - loading UI, Safari cleanup, the GameBull bridge - is the house standard.
+         Overrides live inline because Unity regenerates TemplateData/style.css on every build. */
 
       html, body {
-        margin: 0; padding: 0;
-        width: 100%; height: 100%;
-        overflow: hidden;
-        background: #0E1412;
-        /* Stop iOS rubber-band scroll and Android pull-to-refresh eating drags. */
+        margin: 0; padding: 0; width: 100%; height: 100%;
+        overflow: hidden; background: #0e0e12;
         overscroll-behavior: none;
         touch-action: none;
         -webkit-user-select: none; user-select: none;
@@ -32,149 +38,116 @@
         -webkit-touch-callout: none;
       }
 
-      #unity-container { position: fixed; inset: 0; background: #0E1412; }
+      #unity-container { position: fixed; inset: 0; background: #0e0e12; }
 
-      /* The game handles its own aspect via CameraFit, so the canvas fills the
-         viewport rather than letterboxing to a fixed ratio. On a 19.5:9 phone
-         that means no black bars. */
+      /* Fills the viewport - see note 1 above. */
       #unity-canvas {
-        display: block;
-        width: 100%; height: 100%;
-        background: transparent;
+        display: block; width: 100%; height: 100%;
+        background: transparent !important;
         outline: none;
       }
 
-      /* ---- loading ---- */
-      #loading {
-        position: absolute; inset: 0; z-index: 10;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center; gap: 18px;
-        background: #0E1412;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      /* ---- Loading bar (house standard: 180px icon, 300x18 bar, #1C3A5B fill) ---- */
+      #unity-loading-bar {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        display: none; z-index: 10; text-align: center;
       }
-      #loading-title {
-        color: #F3EFE6; font-size: 17px; font-weight: 600; letter-spacing: 0.02em;
+      #unity-logo {
+        width: 180px; height: 180px; margin: 0 auto 12px;
+        background: url('TemplateData/game-icon.png') center / contain no-repeat;
       }
-      #bar-track {
-        width: min(62vw, 320px); height: 12px;
-        background: #23302B; border-radius: 6px; overflow: hidden;
+      #unity-progress-bar-empty {
+        width: 300px; height: 18px; margin: 12px auto 0;
+        background: #d9d9d9 !important; background-image: none !important;
+        border-radius: 9px; overflow: hidden;
       }
-      #bar-fill {
+      #unity-progress-bar-full {
         width: 0%; height: 100%;
-        background: linear-gradient(90deg, #E2A33C, #E9C46A);
-        border-radius: 6px; transition: width 0.15s ease;
+        background: #1C3A5B !important; background-image: none !important;
+        margin-top: 0 !important;
+        border-radius: 9px; transition: width 0.1s ease;
       }
-      #bar-pct { color: #8FA39A; font-size: 13px; font-variant-numeric: tabular-nums; }
-      #loading-hint { color: #6E817A; font-size: 12px; max-width: 70vw; text-align: center; }
+      #unity-progress-percent {
+        color: #F2F2F2; font: 14px arial, sans-serif; margin-top: 6px;
+      }
 
-      /* ---- rotate-to-landscape gate ---- */
+      #unity-footer { display: none !important; }
+      #unity-warning {
+        position: absolute; left: 50%; top: 5%; transform: translate(-50%);
+        background: white; padding: 10px; display: none; z-index: 20;
+      }
+
+      /* ---- Landscape-only additions ---- */
       #rotate {
-        position: fixed; inset: 0; z-index: 40;
-        display: none;
+        position: fixed; inset: 0; z-index: 40; display: none;
         flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-        background: #0E1412; text-align: center;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        padding: 24px;
+        background: #0e0e12; text-align: center; padding: 24px;
+        font-family: arial, sans-serif;
       }
       #rotate svg { width: 74px; height: 74px; animation: tip 2s ease-in-out infinite; }
-      @keyframes tip {
-        0%, 45%   { transform: rotate(0deg); }
-        60%, 100% { transform: rotate(-90deg); }
-      }
+      @keyframes tip { 0%,45% { transform: rotate(0deg); } 60%,100% { transform: rotate(-90deg); } }
       @media (prefers-reduced-motion: reduce) { #rotate svg { animation: none; transform: rotate(-90deg); } }
-      #rotate p { color: #F3EFE6; font-size: 16px; font-weight: 600; margin: 0; }
-      #rotate small { color: #6E817A; font-size: 13px; }
+      #rotate p { color: #F2F2F2; font-size: 16px; font-weight: bold; margin: 0; }
+      #rotate small { color: #8a8a92; font-size: 13px; }
 
-      /* Only gate on touch devices in portrait — a narrow desktop window shouldn't be blocked. */
-      @media (orientation: portrait) and (pointer: coarse) {
-        #rotate { display: flex; }
-      }
+      /* Only gate touch devices - a narrow desktop window should not be blocked. */
+      @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
 
-      /* ---- tap-to-start (needed for fullscreen + orientation lock gestures) ---- */
       #start {
-        position: fixed; inset: 0; z-index: 30;
-        display: none;
+        position: fixed; inset: 0; z-index: 30; display: none;
         align-items: center; justify-content: center;
-        background: rgba(14, 20, 18, 0.94);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: rgba(14, 14, 18, 0.94); font-family: arial, sans-serif;
       }
       #start button {
         appearance: none; border: 0; cursor: pointer;
-        background: #E2A33C; color: #1A1410;
-        font-size: 17px; font-weight: 700; letter-spacing: 0.02em;
-        padding: 16px 40px; border-radius: 8px;
+        background: #1C3A5B; color: #fff;
+        font-size: 17px; font-weight: bold; padding: 16px 40px; border-radius: 8px;
       }
-      #start button:focus-visible { outline: 3px solid #F3EFE6; outline-offset: 3px; }
-
-      #warning {
-        position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
-        z-index: 50; display: none;
-        background: #fff; color: #111; padding: 8px 12px; border-radius: 4px;
-        font: 13px/1.4 sans-serif; max-width: 90vw;
-      }
+      #start button:focus-visible { outline: 3px solid #F2F2F2; outline-offset: 3px; }
     </style>
   </head>
-
   <body>
     <div id="unity-container">
       <canvas id="unity-canvas" tabindex="-1"></canvas>
-
-      <div id="loading">
-        <div id="loading-title">Good Chef - Cooking Games</div>
-        <div id="bar-track"><div id="bar-fill"></div></div>
-        <div id="bar-pct">0%</div>
-        <div id="loading-hint">First load is large — later visits are cached.</div>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty"><div id="unity-progress-bar-full"></div></div>
+        <div id="unity-progress-percent">0%</div>
       </div>
-
-      <div id="warning"></div>
+      <div id="unity-warning"> </div>
     </div>
 
     <div id="rotate">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#E2A33C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1C3A5B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <rect x="7" y="2" width="10" height="20" rx="2"></rect>
         <line x1="11" y1="18.5" x2="13" y2="18.5"></line>
       </svg>
       <p>Rotate your device</p>
-      <small>Good Chef is played in landscape</small>
+      <small>Good Chef - Cooking Games is played in landscape</small>
     </div>
 
     <div id="start"><button type="button" id="start-btn">Tap to play</button></div>
 
     <script>
-      var canvas   = document.querySelector("#unity-canvas");
-      var isTouch  = window.matchMedia("(pointer: coarse)").matches;
+      var canvas  = document.querySelector("#unity-canvas");
+      var isTouch = window.matchMedia("(pointer: coarse)").matches;
 
-
-      function setProgress(p) {
-        var pct = Math.round(p * 100);
-        document.querySelector("#bar-fill").style.width = pct + "%";
-        document.querySelector("#bar-pct").textContent  = pct + "%";
-      }
-
-      function unityShowBanner(msg, type) {
-        var el = document.querySelector("#warning");
-        el.textContent = msg;
-        el.style.display = "block";
-        if (type !== "error") setTimeout(function () { el.style.display = "none"; }, 5000);
-      }
-
-      // Mobile browser chrome (URL bar) changes the viewport on scroll/rotate.
-      // visualViewport reports the true drawable area; window.innerHeight lies on iOS.
-      function fitCanvas() {
+      // Mobile browser chrome changes the viewport as the URL bar shows and hides. visualViewport
+      // reports the true drawable area; window.innerHeight lies on iOS.
+      function resizeCanvas() {
         var vv = window.visualViewport;
         var w  = Math.round(vv ? vv.width  : window.innerWidth);
         var h  = Math.round(vv ? vv.height : window.innerHeight);
         canvas.style.width  = w + "px";
         canvas.style.height = h + "px";
       }
-      window.addEventListener("resize", fitCanvas);
-      window.addEventListener("orientationchange", function () { setTimeout(fitCanvas, 250); });
-      if (window.visualViewport) window.visualViewport.addEventListener("resize", fitCanvas);
-      fitCanvas();
+      window.addEventListener("resize", resizeCanvas);
+      window.addEventListener("orientationchange", function () { setTimeout(resizeCanvas, 250); });
+      if (window.visualViewport) window.visualViewport.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
 
-      // Fullscreen + orientation lock both require a user gesture, and lock() only
-      // works while fullscreen on Android Chrome. iOS Safari supports neither — the
-      // CSS rotate gate is the fallback there.
+      // Fullscreen and orientation lock both need a user gesture, and lock() only works while
+      // fullscreen on Android Chrome. iOS supports neither - the CSS rotate gate covers it there.
       function enterLandscape() {
         var el = document.documentElement;
         var req = el.requestFullscreen || el.webkitRequestFullscreen;
@@ -183,10 +156,35 @@
           .then(function () {
             if (screen.orientation && screen.orientation.lock) return screen.orientation.lock("landscape");
           })
-          .catch(function () { /* unsupported — the rotate gate covers it */ });
+          .catch(function () { /* unsupported - the rotate gate covers it */ });
       }
 
-      var buildUrl  = "Build";
+      // ===== Single source of truth for the loading bar + percent =====
+      function setLoadProgress(p) {
+        var pct  = Math.round(p * 100);
+        var full = document.querySelector("#unity-progress-bar-full");
+        var txt  = document.querySelector("#unity-progress-percent");
+        if (full) full.style.width = pct + "%";
+        if (txt)  txt.innerText    = pct + "%";
+      }
+
+      function unityShowBanner(msg, type) {
+        var warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function () { warningBanner.removeChild(div); updateBannerVisibility(); }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "Build";
       var loaderUrl = buildUrl + "/WebGL.loader.js";
       var config = {
         arguments: [],
@@ -198,34 +196,76 @@
         productName: "Good Chef - Cooking Games",
         productVersion: "1.9",
         showBanner: unityShowBanner,
-        matchWebGLToCanvasSize: true
+        matchWebGLToCanvasSize: true,
       };
+
+      document.querySelector("#unity-loading-bar").style.display = "block";
 
       var script = document.createElement("script");
       script.src = loaderUrl;
-      script.onload = function () {
-        createUnityInstance(canvas, config, setProgress).then(function (unityInstance) {
+      script.onload = () => {
+        createUnityInstance(canvas, config, setLoadProgress).then((unityInstance) => {
           window.unityInstance = unityInstance;
-          setProgress(1);
 
-          var l = document.querySelector("#loading");
-          if (l && l.parentNode) l.parentNode.removeChild(l);
+          // Force 100% before hiding (Unity's onProgress plateaus at 0.9).
+          setLoadProgress(1);
 
-          fitCanvas();
+          // Safari/WebKit keeps painting loading elements even after display:none on a parent.
+          // Hide each explicitly, clear any background image, then REMOVE it from the DOM.
+          function killEl(sel) {
+            var el = document.querySelector(sel);
+            if (!el) return;
+            el.style.display = "none";
+            el.style.visibility = "hidden";
+            el.style.opacity = "0";
+            el.style.backgroundImage = "none";
+            if (el.parentNode) el.parentNode.removeChild(el);
+          }
+          killEl("#unity-logo");
+          killEl("#unity-progress-bar-full");
+          killEl("#unity-progress-bar-empty");
+          killEl("#unity-progress-percent");
+          killEl("#unity-loading-bar");
 
-          // On touch devices, offer one tap that goes fullscreen and locks landscape.
+          resizeCanvas();
+
+          // On touch devices, one tap goes fullscreen and locks landscape.
           if (isTouch) {
             var gate = document.querySelector("#start");
             gate.style.display = "flex";
             document.querySelector("#start-btn").addEventListener("click", function () {
               enterLandscape();
               gate.style.display = "none";
-              setTimeout(fitCanvas, 300);
+              setTimeout(resizeCanvas, 300);
             }, { once: true });
           }
-        }).catch(function (message) {
-          unityShowBanner(message, "error");
-        });
+
+          // ===== Page <-> game bridge (GameBull) =====
+          // The parent page posts campaign:init with the partner's configuration. Good Chef forwards
+          // the whole payload to PartnerAssetManager, which already knows how to fetch and apply
+          // keyed images - so partner art arrives through the same path that the local
+          // partner/manifest.json uses during testing.
+          try { window.parent.postMessage({ type: 'game:ready' }, '*'); } catch (e) {}
+
+          window.addEventListener('message', function (event) {
+            var msg = event.data;
+            if (!msg || msg.type !== 'campaign:init') return;
+            try {
+              unityInstance.SendMessage('PartnerAssetManager', 'FApplyRemoteConfig',
+                                        JSON.stringify(msg.config || {}));
+            } catch (e) {}
+          });
+
+          // Self-test: ?assetTest=<url-to-manifest.json> loads an alternate manifest without
+          // needing the parent page, mirroring the ?birdTest / ?ballTest hooks in the other titles.
+          var t = window.location.search.match(/[?&]assetTest=([^&]*)/);
+          if (t) {
+            try {
+              unityInstance.SendMessage('PartnerAssetManager', 'FApplyRemoteConfig',
+                                        JSON.stringify({ manifestUrl: decodeURIComponent(t[1]) }));
+            } catch (e) {}
+          }
+        }).catch((message) => { alert(message); });
       };
       document.body.appendChild(script);
     </script>
