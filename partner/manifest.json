@@ -12,6 +12,10 @@
     {
       "key": "cola1_full",
       "url": "partner/cola1_full.png"
+    },
+    {
+      "key": "burger_bread",
+      "url": "partner/burger_bread.png"
     }
   ]
 }
