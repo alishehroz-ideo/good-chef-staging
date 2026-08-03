@@ -3,51 +3,35 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-
-    <!-- viewport-fit=cover fills the notch area; user-scalable=no stops pinch-zoom fighting the
-         game's own touch handling. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0e0e12">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
     <title>Good Chef - Cooking Games</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <style>
-      /* ===== Ideofuzion template — Good Chef (LANDSCAPE) =====
-         House template, with two deliberate departures from the portrait games:
-
-           1. The canvas FILLS the viewport instead of letterboxing. Good Chef has CameraFit, which
-              adapts the camera to any aspect - letterboxing to a fixed ratio would add black bars
-              on a 19.5:9 phone for no reason. The portrait titles need the letterbox; this one does not.
-           2. Mobile landscape handling: rotate gate, fullscreen + orientation lock, visualViewport
-              sizing. The portrait games do not need these.
-
-         Everything else - loading UI, Safari cleanup, the GameBull bridge - is the house standard.
-         Overrides live inline because Unity regenerates TemplateData/style.css on every build. */
+      /* ===== Ideofuzion template — responsive letterbox + loading UI =====
+         All overrides live inline here because Unity regenerates TemplateData/style.css
+         on every build; !important beats it. */
 
       html, body {
         margin: 0; padding: 0; width: 100%; height: 100%;
         overflow: hidden; background: #0e0e12;
-        overscroll-behavior: none;
-        touch-action: none;
-        -webkit-user-select: none; user-select: none;
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
       }
 
-      #unity-container { position: fixed; inset: 0; background: #0e0e12; }
+      /* Full-viewport shell. Solid dark = clean loading backdrop + clean letterbox bars.
+         (No hero image: square game art looks oversized stretched into the side bars.) */
+      #unity-container {
+        position: fixed; inset: 0;
+        background: #0e0e12;
+      }
 
-      /* Fills the viewport - see note 1 above. */
+      /* Canvas is positioned by JS (letterbox). Must be TRANSPARENT so the backdrop shows
+         through while loading; Unity fills it once the game renders. */
       #unity-canvas {
-        display: block; width: 100%; height: 100%;
+        display: block; position: absolute;
         background: transparent !important;
-        outline: none;
       }
 
-      /* ---- Loading bar (house standard: 180px icon, 300x18 bar, #1C3A5B fill) ---- */
+      /* ---- Loading bar ---- */
       #unity-loading-bar {
         position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
         display: none; z-index: 10; text-align: center;
@@ -56,59 +40,32 @@
         width: 180px; height: 180px; margin: 0 auto 12px;
         background: url('TemplateData/game-icon.png') center / contain no-repeat;
       }
-      #unity-progress-bar-empty {
+      #unity-progress-bar-empty {                 /* track */
         width: 300px; height: 18px; margin: 12px auto 0;
         background: #d9d9d9 !important; background-image: none !important;
         border-radius: 9px; overflow: hidden;
       }
-      #unity-progress-bar-full {
+      #unity-progress-bar-full {                  /* fill */
         width: 0%; height: 100%;
         background: #1C3A5B !important; background-image: none !important;
-        margin-top: 0 !important;
+        margin-top: 0 !important;                 /* fix: default style.css pushes it down */
         border-radius: 9px; transition: width 0.1s ease;
       }
-      #unity-progress-percent {
+      #unity-progress-percent {                   /* % readout */
         color: #F2F2F2; font: 14px arial, sans-serif; margin-top: 6px;
       }
 
+      /* No footer in this build. */
       #unity-footer { display: none !important; }
       #unity-warning {
         position: absolute; left: 50%; top: 5%; transform: translate(-50%);
         background: white; padding: 10px; display: none; z-index: 20;
       }
-
-      /* ---- Landscape-only additions ---- */
-      #rotate {
-        position: fixed; inset: 0; z-index: 40; display: none;
-        flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-        background: #0e0e12; text-align: center; padding: 24px;
-        font-family: arial, sans-serif;
-      }
-      #rotate svg { width: 74px; height: 74px; animation: tip 2s ease-in-out infinite; }
-      @keyframes tip { 0%,45% { transform: rotate(0deg); } 60%,100% { transform: rotate(-90deg); } }
-      @media (prefers-reduced-motion: reduce) { #rotate svg { animation: none; transform: rotate(-90deg); } }
-      #rotate p { color: #F2F2F2; font-size: 16px; font-weight: bold; margin: 0; }
-      #rotate small { color: #8a8a92; font-size: 13px; }
-
-      /* Only gate touch devices - a narrow desktop window should not be blocked. */
-      @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
-
-      #start {
-        position: fixed; inset: 0; z-index: 30; display: none;
-        align-items: center; justify-content: center;
-        background: rgba(14, 14, 18, 0.94); font-family: arial, sans-serif;
-      }
-      #start button {
-        appearance: none; border: 0; cursor: pointer;
-        background: #1C3A5B; color: #fff;
-        font-size: 17px; font-weight: bold; padding: 16px 40px; border-radius: 8px;
-      }
-      #start button:focus-visible { outline: 3px solid #F2F2F2; outline-offset: 3px; }
     </style>
   </head>
   <body>
     <div id="unity-container">
-      <canvas id="unity-canvas" tabindex="-1"></canvas>
+      <canvas id="unity-canvas" width=1920 height=1080 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-bar-empty"><div id="unity-progress-bar-full"></div></div>
@@ -116,48 +73,22 @@
       </div>
       <div id="unity-warning"> </div>
     </div>
-
-    <div id="rotate">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#1C3A5B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="7" y="2" width="10" height="20" rx="2"></rect>
-        <line x1="11" y1="18.5" x2="13" y2="18.5"></line>
-      </svg>
-      <p>Rotate your device</p>
-      <small>Good Chef - Cooking Games is played in landscape</small>
-    </div>
-
-    <div id="start"><button type="button" id="start-btn">Tap to play</button></div>
-
     <script>
-      var canvas  = document.querySelector("#unity-canvas");
-      var isTouch = window.matchMedia("(pointer: coarse)").matches;
+      var canvas = document.querySelector("#unity-canvas");
 
-      // Mobile browser chrome changes the viewport as the URL bar shows and hides. visualViewport
-      // reports the true drawable area; window.innerHeight lies on iOS.
+      // ===== Responsive letterbox: largest rect of the game's aspect that fits, centered =====
+      var GAME_ASPECT = 1920 / 1080;
       function resizeCanvas() {
-        var vv = window.visualViewport;
-        var w  = Math.round(vv ? vv.width  : window.innerWidth);
-        var h  = Math.round(vv ? vv.height : window.innerHeight);
+        var availW = window.innerWidth, availH = window.innerHeight, w, h;
+        if (availW / availH > GAME_ASPECT) { h = availH; w = Math.round(h * GAME_ASPECT); }
+        else                               { w = availW; h = Math.round(w / GAME_ASPECT); }
         canvas.style.width  = w + "px";
         canvas.style.height = h + "px";
+        canvas.style.left   = Math.round((availW - w) / 2) + "px";
+        canvas.style.top    = Math.round((availH - h) / 2) + "px";
       }
       window.addEventListener("resize", resizeCanvas);
-      window.addEventListener("orientationchange", function () { setTimeout(resizeCanvas, 250); });
-      if (window.visualViewport) window.visualViewport.addEventListener("resize", resizeCanvas);
       resizeCanvas();
-
-      // Fullscreen and orientation lock both need a user gesture, and lock() only works while
-      // fullscreen on Android Chrome. iOS supports neither - the CSS rotate gate covers it there.
-      function enterLandscape() {
-        var el = document.documentElement;
-        var req = el.requestFullscreen || el.webkitRequestFullscreen;
-        var p = req ? req.call(el) : null;
-        Promise.resolve(p)
-          .then(function () {
-            if (screen.orientation && screen.orientation.lock) return screen.orientation.lock("landscape");
-          })
-          .catch(function () { /* unsupported - the rotate gate covers it */ });
-      }
 
       // ===== Single source of truth for the loading bar + percent =====
       function setLoadProgress(p) {
@@ -196,6 +127,7 @@
         productName: "Good Chef - Cooking Games",
         productVersion: "1.9",
         showBanner: unityShowBanner,
+        // Render buffer tracks the CSS (letterboxed) canvas size -> responsive, no distortion.
         matchWebGLToCanvasSize: true,
       };
 
@@ -211,14 +143,15 @@
           setLoadProgress(1);
 
           // Safari/WebKit keeps painting loading elements even after display:none on a parent.
-          // Hide each explicitly, clear any background image, then REMOVE it from the DOM.
+          // Hide each element explicitly, clear any background image, then REMOVE it from the DOM
+          // so nothing can be painted. (Only #unity-logo has a background image — the game icon.)
           function killEl(sel) {
             var el = document.querySelector(sel);
             if (!el) return;
             el.style.display = "none";
             el.style.visibility = "hidden";
             el.style.opacity = "0";
-            el.style.backgroundImage = "none";
+            el.style.backgroundImage = "none";   // kill any background image (the icon)
             if (el.parentNode) el.parentNode.removeChild(el);
           }
           killEl("#unity-logo");
@@ -226,44 +159,34 @@
           killEl("#unity-progress-bar-empty");
           killEl("#unity-progress-percent");
           killEl("#unity-loading-bar");
+          // No custom loading overlay/cover div in this template — nothing else to kill.
 
           resizeCanvas();
 
-          // On touch devices, one tap goes fullscreen and locks landscape.
-          if (isTouch) {
-            var gate = document.querySelector("#start");
-            gate.style.display = "flex";
-            document.querySelector("#start-btn").addEventListener("click", function () {
-              enterLandscape();
-              gate.style.display = "none";
-              setTimeout(resizeCanvas, 300);
-            }, { once: true });
-          }
-
           // ===== Page <-> game bridge (GameBull) =====
-          // The parent page posts campaign:init with the partner's configuration. Good Chef forwards
-          // the whole payload to PartnerAssetManager, which already knows how to fetch and apply
-          // keyed images - so partner art arrives through the same path that the local
-          // partner/manifest.json uses during testing.
           try { window.parent.postMessage({ type: 'game:ready' }, '*'); } catch (e) {}
-
           window.addEventListener('message', function (event) {
             var msg = event.data;
             if (!msg || msg.type !== 'campaign:init') return;
-            try {
-              unityInstance.SendMessage('PartnerAssetManager', 'FApplyRemoteConfig',
-                                        JSON.stringify(msg.config || {}));
-            } catch (e) {}
+            var cfg = msg.config || {};
+            if (cfg.birdImage) {
+              try { unityInstance.SendMessage('Bridge', 'SetBirdImage', cfg.birdImage); } catch (e) {}
+            }
+            if (cfg.birdText !== undefined) {
+              try { unityInstance.SendMessage('Bridge', 'SetBirdText', String(cfg.birdText)); } catch (e) {}
+            }
           });
-
-          // Self-test: ?assetTest=<url-to-manifest.json> loads an alternate manifest without
-          // needing the parent page, mirroring the ?birdTest / ?ballTest hooks in the other titles.
-          var t = window.location.search.match(/[?&]assetTest=([^&]*)/);
-          if (t) {
-            try {
-              unityInstance.SendMessage('PartnerAssetManager', 'FApplyRemoteConfig',
-                                        JSON.stringify({ manifestUrl: decodeURIComponent(t[1]) }));
-            } catch (e) {}
+          // Self-test: ?birdTest=1 pushes a hot-pink circle as the bird image (needs Bridge.cs).
+          if (/[?&]birdTest=1/.test(window.location.search)) {
+            var c = document.createElement('canvas'); c.width = c.height = 256;
+            var g = c.getContext('2d');
+            g.fillStyle = '#ff17a5'; g.beginPath(); g.arc(128, 128, 120, 0, Math.PI * 2); g.fill();
+            try { unityInstance.SendMessage('Bridge', 'SetBirdImage', c.toDataURL('image/png')); } catch (e) {}
+          }
+          // Self-test: ?textTest=XXXX sets the bird text (max 5 chars enforced in C#).
+          var __t = window.location.search.match(/[?&]textTest=([^&]*)/);
+          if (__t) {
+            try { unityInstance.SendMessage('Bridge', 'SetBirdText', decodeURIComponent(__t[1])); } catch (e) {}
           }
         }).catch((message) => { alert(message); });
       };
