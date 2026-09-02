@@ -17,8 +17,15 @@
         overflow: hidden; background: #0e0e12;
       }
 
-      /* Full-viewport shell. Solid dark = clean loading backdrop + clean letterbox bars.
-         (No hero image: square game art looks oversized stretched into the side bars.) */
+      /* Full-viewport shell: the game's own key art, blurred right down, behind the loading UI.
+         Same idea as the other GameBull titles - the picture reads as a mood rather than as
+         detail, so the icon and the bar stay the only things in focus.
+         The blur and the darkening are baked into loading-bg.jpg rather than done with a CSS
+         filter, because filter:blur on a full-screen element is expensive on phones and the whole
+         point of this screen is that it shows while the device is busy loading 55 MB of wasm.
+         background-size:cover crops rather than stretches, so the 4:3 art still fills a wide
+         letterboxed viewport without distorting - which is why a hero image was avoided before.
+         The solid colour stays underneath as the fallback and as the letterbox bar colour. */
       #unity-container {
         position: fixed; inset: 0;
         background: #0e0e12 url('TemplateData/loading-bg.jpg') center / cover no-repeat;
